@@ -5,6 +5,11 @@ package cuckoo;
 import cuckoo.HashUtility;
 import cuckoo.Bucket;
 import cuckoo.CuckooFilter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.io.*;
+import com.opencsv.CSVWriter;
 
 public class App {
     public String getGreeting() {
@@ -36,10 +41,115 @@ public class App {
 
         return sb.toString();
     }
+    static CuckooFilter createFilter(int capacity,int bucketSize, int fingerprintSize, int maxDisplacements, ArrayList<String> collection){
+      CuckooFilter mCuckooFilter = new CuckooFilter(capacity, bucketSize, fingerprintSize,maxDisplacements);
+      for (String coll : collection) {
+           mCuckooFilter.insert(coll);
+      }
+      return mCuckooFilter;
+    }
+
+    public static void writeDataLineByLine(String filePath,ArrayList<Integer> timestamps,ArrayList<Float> occupancy )
+    {
+        // first create file object for file placed at location
+        // specified by filepath
+        File file = new File(filePath);
+        try {
+            // create FileWriter object with file as parameter
+            FileWriter outputfile = new FileWriter(file);
+
+            // create CSVWriter object filewriter object as parameter
+            CSVWriter writer = new CSVWriter(outputfile);
+
+            // adding header to csv
+            String[] header = { "Occupancy", "Time"};
+            writer.writeNext(header);
+            for(int i = 0; i<timestamps.size();i++){
+              String timestamp = Integer.toString(timestamps.get(i));
+              String occupanc = String.valueOf(occupancy.get(i));
+              String[] data = {timestamp,occupanc };
+              writer.writeNext(data);
+            }
+            // closing writer connection
+            writer.close();
+        }
+        catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    static void OCF(float min, float max){
+      ArrayList<String> collection = new ArrayList<String>();
+      int capacity = 16;
+      CuckooFilter OCFfilter = createFilter(capacity, 4, 3,500,collection);
+      int heads=0;
+      int tails = 0;
+      ArrayList<Integer> timestamps = new ArrayList<Integer>();
+      ArrayList<Float> occupancy = new ArrayList<Float>();
+      for(int i = 0; i<=100000;i++){
+        timestamps.add(i);
+        occupancy.add(OCFfilter.getOccupancy());
+        Random rand = new Random();
+        int value = rand.nextInt(4); // Possible values are 0, 1 & 2
+        if(OCFfilter.getOccupancy()>max){
+          capacity+=capacity;
+          OCFfilter = createFilter(capacity, 4, 3,500,collection);
+        } else if(OCFfilter.getOccupancy()<min){
+          capacity = capacity-8;
+          OCFfilter = createFilter(capacity, 4, 3,500,collection);
+        }
+        if(value == 0 & collection.size()!=0) {
+          ++heads;
+          String deadEntry =collection.get(0);
+          collection.remove(0);
+          OCFfilter.delete(deadEntry);
+        } else {
+          ++tails;
+          String newEntry = App.getAlphaNumericString(6);
+          collection.add(newEntry);
+          OCFfilter.insert(newEntry);
+        }
+
+      }
+      writeDataLineByLine("/home/amnox/cuckoo/cuckoo/src/main/java/cuckoo/OCF.csv",timestamps,occupancy);
+      System.out.println(OCFfilter.getOccupancy());
+    }
+    static void noOCF(float min, float max){
+      ArrayList<String> collection = new ArrayList<String>();
+      int capacity = 16;
+      CuckooFilter OCFfilter = createFilter(capacity, 4, 3,500,collection);
+      int heads=0;
+      int tails = 0;
+      ArrayList<Integer> timestamps = new ArrayList<Integer>();
+      ArrayList<Float> occupancy = new ArrayList<Float>();
+      for(int i = 0; i<=100000;i++){
+        timestamps.add(i);
+        occupancy.add(OCFfilter.getOccupancy());
+        Random rand = new Random();
+        int value = rand.nextInt(4); // Possible values are 0, 1 & 2
+
+        if(value == 0 & collection.size()!=0) {
+          ++heads;
+          String deadEntry =collection.get(0);
+          collection.remove(0);
+          OCFfilter.delete(deadEntry);
+        } else {
+          ++tails;
+          String newEntry = App.getAlphaNumericString(6);
+          collection.add(newEntry);
+          OCFfilter.insert(newEntry);
+        }
+
+      }
+      writeDataLineByLine("/home/amnox/cuckoo/cuckoo/src/main/java/cuckoo/noOCF.csv",timestamps,occupancy);
+      System.out.println(OCFfilter.getOccupancy());
+    }
     public static void main(String[] args) {
         System.out.println(new App().getGreeting());
+        noOCF(0.1f,0.2f);
         //System.out.println(HashUtility.fingerprint("abcdefghijyz",2));
-        Bucket mBucket = new Bucket(5);
+        /*Bucket mBucket = new Bucket(5);
         for(int i=0;i<=6;i++){
           mBucket.insert(i);
         }
@@ -51,6 +161,7 @@ public class App {
         int fist = capacity*2 ;
         String[] collection = new String[fist];
         CuckooFilter mCuckooFilter = new CuckooFilter(16, 4, 3,500);
+        System.out.println(mCuckooFilter.getOccupancy());
         for (int i = 0; i<(fist);i++){
           String randomString = App.getAlphaNumericString(6);
           if (mCuckooFilter.insert(randomString)){
@@ -59,14 +170,15 @@ public class App {
             collection[i]= null;
           }
         }
-        /*for (int i = 0; i<=(capacity+60);i++){
+        System.out.println(mCuckooFilter.getOccupancy());
+        for (int i = 0; i<=(capacity+60);i++){
           System.out.print(i);
           System.out.print("  ::  ");
           System.out.print(mCuckooFilter.insert(App.getAlphaNumericString(6)));
           System.out.println();
         }
 */
-        mCuckooFilter.printBuckets();
+        /*mCuckooFilter.printBuckets();
         for(String loc:collection){
           if(loc==null){
             continue;
@@ -90,7 +202,6 @@ public class App {
           if(loc==null){
             continue;
           }else{
-            System.out.print("  ::  ");
             System.out.print(loc);
             System.out.print("  ::  ");
             System.out.println(mCuckooFilter.contains(loc));
@@ -99,7 +210,7 @@ public class App {
         mCuckooFilter.insert("sdvbrebrehgr");
         System.out.println(mCuckooFilter.contains("sdvbrebrehgr"));
         mCuckooFilter.delete("sdvbrebrehgr");
-        System.out.println(mCuckooFilter.contains("sdvbrebrehgr"));
+        System.out.println(mCuckooFilter.contains("sdvbrebrehgr"));*/
 
 
     }

@@ -46,7 +46,9 @@ public class CuckooFilter {
          bucket.printBucket();  //prints all buckets
     }*/
   }
-
+  public float getOccupancy(){
+    return (float)this.size/this.capacity;
+  }
   private int getIndex(String item){
     BigInteger hashCode = HashUtility.createHash(item);
     BigInteger mod = BigInteger.valueOf(this.capacity);
@@ -98,7 +100,6 @@ public class CuckooFilter {
         return true;
       }
     }
-    System.out.println(item);
     return false;
   }
 
