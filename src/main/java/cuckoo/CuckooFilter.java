@@ -16,6 +16,22 @@ public class CuckooFilter {
   public static int BigIntegerToInt(BigInteger mBigInteger){
     return mBigInteger.intValue();
   }
+  public int getCapacity(){
+    return this.capacity;
+  }
+  public int getBucketSize(){
+    return this.bucketSize;
+  }
+  public int getFingerprintSize(){
+    return this.fingerprintSize;
+  }
+  public int getMaxDisplacements(){
+    return this.maxDisplacements;
+  }
+
+  public int getSize(){
+    return this.size;
+  }
 
   public void printBuckets(){
     for (Bucket bucket : this.buckets) {
@@ -68,10 +84,6 @@ public class CuckooFilter {
     BigInteger bigIndex = BigInteger.valueOf(index);
     BigInteger mAlternateIndex = (bigIndex.xor(hashCode)).mod(mod);
     return BigIntegerToInt(mAlternateIndex);
-    /*
-      alt_index = (index ^ hashutils.hash_code(fingerprint)) % self.capacity
-      return alt_index
-    */
 
   }
 

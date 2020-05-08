@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Random;
 import java.io.*;
 import com.opencsv.CSVWriter;
+import java.lang.*;
 
 public class App {
     public String getGreeting() {
@@ -79,7 +80,7 @@ public class App {
         }
     }
 
-    static void OCF(float min, float max){
+    static void OCFilter(float min, float max){
       ArrayList<String> collection = new ArrayList<String>();
       int capacity = 16;
       CuckooFilter OCFfilter = createFilter(capacity, 4, 3,500,collection);
@@ -146,8 +147,7 @@ public class App {
       System.out.println(OCFfilter.getOccupancy());
     }
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
-        noOCF(0.1f,0.2f);
+        //OCF(0.1f,0.2f);
         //System.out.println(HashUtility.fingerprint("abcdefghijyz",2));
         /*Bucket mBucket = new Bucket(5);
         for(int i=0;i<=6;i++){
@@ -211,6 +211,47 @@ public class App {
         System.out.println(mCuckooFilter.contains("sdvbrebrehgr"));
         mCuckooFilter.delete("sdvbrebrehgr");
         System.out.println(mCuckooFilter.contains("sdvbrebrehgr"));*/
+        ArrayList<String> mycollection = new ArrayList<String>();
+        int capacity = 16;
+        CuckooFilter mCuckooFilter = createFilter(capacity, 4, 3,500,new ArrayList<String>());
+        OCF mOCF = new OCF(mCuckooFilter,0.45f, 0.9f,"EOF");
+        int runs = 100000;
+        for (int i = 0; i<runs;i++){
+          mycollection.add(App.getAlphaNumericString(6));
+        }
+        System.out.println(System.currentTimeMillis());
+        for (int i = 0; i<(runs);i++){
+          //String randomString = App.getAlphaNumericString(6);
+          boolean truth = mOCF.insert(mycollection.get(i));
+          if (truth){
+            //System.out.println(mOCF.sanityCheck());
+            //System.out.println("something broke");
+
+          } else{
+            System.out.print(i);
+            System.out.println("something broke");
+            break;
+          }
+
+
+
+        }
+        System.out.println(System.currentTimeMillis());
+        System.out.println("Removing now");
+        for (int i = 0; i<(runs);i++){
+          String randomString = App.getAlphaNumericString(6);
+
+          boolean truth = mOCF.delete(mycollection.get(i));
+          if (truth){
+            //System.out.println(mOCF.sanityCheck());
+            //System.out.println("something broke");
+          } else{
+            System.out.print(i);
+            System.out.println("something broke");
+            break;
+          }
+
+        }
 
 
     }
